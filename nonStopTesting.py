@@ -1,24 +1,40 @@
 """nonStopTesting.py
-This module adds wrappers to have non-stop error handling
+This module adds two decorators to have non-stop error handling when and exception is raised
 """
 
+import inspect
+import functools
 import testLib.GLOBALS as GLOBALS
+
+getmembers = inspect.getmembers
 
 class testFunction:
 	"""Test function decorator"""
-	def __init__ (self, function):
+	def __init__ (self, function, *fixedArgs):
 		self.function = function
+		self.fixedArgs = fixedArgs
 		
 	def __call__ (self, *args, **kwargs):
+		"""Callable class"""
 		try:
-			return self.function(*args, **kwargs)
+			return self.function(*(self.fixedArgs + args), **kwargs)
 		except Exception as catchedException:
 			errorLog = self.getErrorLog(catchedException, *args, **kwargs)
 			GLOBALS.TESTLOG.write(errorLog)
 			return errorLog
+		
+	def __get__ (self, instance, owner=None):
+		"""Support instance methods"""
+		if instance and owner:
+			self.fixedArgs = (owner,) + self.fixedArgs
+			return self
+		
+	def __repr__ (self):
+		"""Return the function's docstring."""
+		return self.function.__doc__
 			
 	def getErrorLog (self, catchedException, *args, **kwargs):
-		"""The decorator displays how is the function called and the exception"""
+		"""The decorator displays how is the function called and the exception raised"""
 		track_error = self.trackError()
 		arguments = self.parseArguments(*args, **kwargs)
 		return track_error + "\tCalled: " + self.function.__name__ + arguments +"\n"+ repr(catchedException)
@@ -48,14 +64,20 @@ class testFunction:
 		for name, value in kwargs.items():
 			kwargs_str += name + "=" + repr(value) + ", "
 		return kwargs_str[:-2]
-
+	
+	
 def testClass (myClass):
 	"""Pass testing decorator to all the methods in a class"""
-	for name, methods in getmembers(myClass):
-		if hasattr(methods, "__call__"):
-		#if isinstance(methods, FunctionType):
-			#types.UnboundMethodType(python 2) 
-			#types.FunctionType(python 3)
-			#types.MethodType?
-			#print (name)
-			setattr(myClass, name, testing(methods))
+	class NewClass (myClass):
+		
+		def __init__ (self, *args, **kwargs):
+			myClass.__init__(self, *args, **kwargs)
+			self.__setMethodsToTestMode()
+			
+		def __setMethodsToTestMode (self):		
+			for name, method in getmembers(myClass):
+				if hasattr(method, "__call__") and name[0] != "_":
+					new_method = testFunction(method, self)
+					setattr(self, name, new_method)
+					
+	return NewClass
