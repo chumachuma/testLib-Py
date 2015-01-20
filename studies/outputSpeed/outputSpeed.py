@@ -7,7 +7,7 @@ The output methods studied are:
         - open-write-close
         - open-write...write-close
     
-To perform this study a random string of 25k lines will be generated, this same string will passed into the the two 
+To perform this study a random string of 25k lines will be generated, this same string will passed into the the 
 different chosen output methods.
 And it will be passed in different ways in order to determine which presents the best behaviour:
     - line by line
@@ -33,84 +33,56 @@ __version__  = "1.0"
 __status__ = "Study"
 __python_version__ = "3.4"
 __since__ = "07/01/2015"
-__change__ = "24/12/2014"
+__change__ = "11/01/2015"
 
 NUMBER_OF_LINES = 50000 #~2.9GB!
 MAX_CHARACTERS_IN_LINE = 80
 CHUNK_SIZES = [1, 1000, 10000, 20000, NUMBER_OF_LINES]
 NTEST = 5
-TEST_ITERATIONS = 100
+TEST_ITERATIONS = 150
 LOG_FILENAME = "temp_log.txt"
 RESULTS_FILENAME = "log.txt"
 STRING_COMPONENT = "abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
+@timeFunction
 def studyOutputSpeed():
     print( "Output Methods Simulation started" )
-    prntByLines = []
-    prntChunk01 = []
-    prntChunk10 = []
-    prntChunk20 = []
-    prntAllData = []
     
-    OpClByLines = []
-    OpClChunk01 = []
-    OpClChunk10 = []
-    OpClChunk20 = []
-    OpClAllData = []
-    
-    OpWrByLines = []
-    OpWrChunk01 = []
-    OpWrChunk10 = []
-    OpWrChunk20 = []
-    OpWrAllData = []
-    
-    prntResults = [prntByLines, prntChunk01, prntChunk10, prntChunk20, prntAllData]
-    OpClResults = [OpClByLines, OpClChunk01, OpClChunk10, OpClChunk20, OpClAllData]
-    OpWrResults = [OpWrByLines, OpWrChunk01, OpWrChunk10, OpWrChunk20, OpClAllData]
-    TotalStringLength = []
+    # PREPROCESSING
+    Cases = (
+            "prntByLines", "prntChunk01", "prntChunk10", "prntChunk20", "prntAllData",
+            "OpClByLines", "OpClChunk01", "OpClChunk10", "OpClChunk20", "OpClAllData",
+            "OpWrByLines", "OpWrChunk01", "OpWrChunk10", "OpWrChunk20", "OpWrAllData",
+            "TotalStringLength"
+            )
+    name2ID = {name: ID for (ID, name) in enumerate(Cases)}
+    Results = [[] for i in range(Cases.__len__())]
     
     stringCases = RandomStringGenerator(NUMBER_OF_LINES)
     outputMethods = OutputMethodsTimer()
     
-    for i in range(TEST_ITERATIONS):
+    # PROCESSINNG 
+    for test_iteration in range(TEST_ITERATIONS):
         stringCases.generateRandomStringList()
-        TotalStringLength.append( str(stringCases.getTotalLength()) )
+        Results[name2ID["TotalStringLength"]].append( str(stringCases.getTotalLength()) )
         for i in range(NTEST):
             chunk_size = CHUNK_SIZES[i]
             chunked_list = stringCases.generateChunkedStringList(chunk_size)
-            outputMethods.setStringList(chunked_list)
-            prntResults[i].append( str(outputMethods.prntBy()))
+            outputMethods.setStringList(chunked_list)            
+            Results[name2ID["prntByLines"] + i].append( str(outputMethods.prntBy()))
             clearLog(LOG_FILENAME)
-            OpClResults[i].append( str(outputMethods.OpCLBy()) )
+            Results[name2ID["OpClByLines"] + i].append( str(outputMethods.OpCLBy()) )
             clearLog(LOG_FILENAME)
-            OpWrResults[i].append( str(outputMethods.OpWrBy()) )
+            Results[name2ID["OpWrByLines"] + i].append( str(outputMethods.OpWrBy()) )
         
     clearLog(LOG_FILENAME)
     
     with open(RESULTS_FILENAME, "w") as file:
-        file.write("prntByLines, " + ", ".join(prntByLines) + "\n")
-        file.write("prntChunk01, " + ", ".join(prntChunk01) + "\n")
-        file.write("prntChunk10, " + ", ".join(prntChunk10) + "\n")
-        file.write("prntChunk20, " + ", ".join(prntChunk20) + "\n")
-        file.write("prntAllData, " + ", ".join(prntAllData) + "\n")
-        
-        file.write("OpClByLines, " + ", ".join(OpClByLines) + "\n")
-        file.write("OpClChunk01, " + ", ".join(OpClChunk01) + "\n")
-        file.write("OpClChunk10, " + ", ".join(OpClChunk10) + "\n")
-        file.write("OpClChunk20, " + ", ".join(OpClChunk20) + "\n")
-        file.write("OpClAllData, " + ", ".join(OpClAllData) + "\n")
-        
-        file.write("OpWrByLines, " + ", ".join(OpWrByLines) + "\n")
-        file.write("OpWrChunk01, " + ", ".join(OpWrChunk01) + "\n")
-        file.write("OpWrChunk10, " + ", ".join(OpWrChunk10) + "\n")
-        file.write("OpWrChunk20, " + ", ".join(OpWrChunk20) + "\n")
-        file.write("OpWrAllData, " + ", ".join(OpWrAllData) + "\n")
-        
-        file.write("TotalStringLength, " + ", ".join(TotalStringLength))
+        for i in range(Cases.__len__()):
+            file.write(Cases[i] +", " + ", ".join(Results[i]) + "\n")
         
     print( "Output Methods Simulation ended" )
-
-
+    
     
 class RandomStringGenerator:
     
@@ -171,4 +143,4 @@ class OutputMethodsTimer:
         file.close()
         
 if __name__ == "__main__":
-    studyOutputSpeed()
+    print (studyOutputSpeed())

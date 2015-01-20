@@ -1,5 +1,37 @@
 import pylab
 
+def postProcessing ():
+    myData = DataAnalysis()
+    myData.loadDataFrom ("log.txt")
+    
+    means = myData.getMean()
+    stds = myData.getSTD()
+    cvs = myData.getCoefficientVariation(2)
+    print (cvs)
+    fivenum = myData.get5num()
+    
+    with open ("Results.txt", "w") as file:
+        file.write("CONCEPT\t\tMEAN\t\tSTD\t\tMIN\t\tP25\t\tMEAN\t\tP75\t\tMAX\n")
+        for i in range(myData.dataID2name.__len__()):
+            file.write(myData.dataID2name[i] + "\t" + 
+                       str(means[i]) + "\t" + str(stds[i]) + "\t" +
+                       "\t".join([str(j) for j in fivenum[i]]) + "\n")
+            
+    pylab.figure(1)
+    pylab.axes()
+    pylab.hold(True)
+    j = 1 #crappy hack
+    X = [i for i in range(1,6)]
+    for i in range(3):
+        pylab.plot( X[j:], means[i*5+j:(i+1)*5], color=getColor(myData.dataID2name[i*5]) )
+    """for row in range(means.__len__()-1):
+        circle = pylab.Circle( (i%5, means[i]), cvs[i], fc=getColor(myData.dataID2name[i]) )
+        pylab.gca().add_patch(circle)
+        
+    #pylab.axis('scaled')"""
+    pylab.savefig('Results.png')
+    pylab.show()
+    
 class DataAnalysis:
     def __init__ (self):
         self.name2dataID = {}
@@ -19,26 +51,36 @@ class DataAnalysis:
     def getData (self, data_name):
         return self.data(self.name2dataID[data_name])
     
+    def getMean (self):
+        return [pylab.mean(row) for row in self.data]
+    
+    def getSTD (self):
+        return [pylab.std(row) for row in self.data]
+    
+    def getCoefficientVariation (self, scale=1):
+        return [(std/mean)*scale for std, mean in zip(self.getSTD(), self.getMean())]
+    
+    def get5num (self):
+        mins = [min(row) for row in self.data]
+        p25s = [pylab.percentile(row, 25) for row in self.data]
+        medians = [pylab.percentile(row, 50) for row in self.data]
+        p75s = [pylab.percentile(row, 75) for row in self.data]
+        maxs = [max(row) for row in self.data]
+        return [fivenum for fivenum in zip(mins, p25s, medians, p75s, maxs)]
+    
 def getColor (name):
-    name2color = {
-                    "prntByLines" : "red",
-                    "prntChunk01" : "red",
-                    "prntChunk10" : "red",
-                    "prntChunk20" : "red",
-                    "prntAllData" : "red",
-                    "OpClByLines" : "blue",
-                    "OpClChunk01" : "blue",
-                    "OpClChunk10" : "blue",
-                    "OpClChunk20" : "blue",
-                    "OpClAllData" : "blue",   
-                    "OpWrByLines" : "green",
-                    "OpWrChunk01" : "green",
-                    "OpWrChunk10" : "green",
-                    "OpWrChunk20" : "green",
-                    "OpWrAllData" : "green",
-                    "TotalStringLength" : "black"
-                  }
-    return name2color[name]
+    code = name[:4]
+    if code == "prnt":
+        color = "red"
+    elif code == "OpCl":
+        color = "blue"
+    elif code == "OpWr":
+        color = "green"
+    elif code == "Total":
+        color = "black"
+    else:
+        color = "pink"
+    return color
 
 def getPosition (name):
     code = name [-2:]
@@ -95,6 +137,4 @@ def boxplots(myData):
     pylab.show()
     
 if __name__ == "__main__":
-    myData = DataAnalysis()
-    myData.loadDataFrom ("log.txt")
-    boxplots(myData)
+    postProcessing()
