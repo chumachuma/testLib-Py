@@ -6,14 +6,14 @@ __since__ = "01/01/2015"
 __change__ = "02/01/2015"
 
 import testLib.GLOBALS
-import testLib.logInterface
+#import testLib.logInterface
 import testLib.nonStopTesting
 import testLib.timeFunction
 import testLib.dummies
 
 __all__ = [
         "GLOBALS",
-        "logInterface",
+        #"logInterface",
         "nonStopTesting",
         "timeFunction",
         "dummies"

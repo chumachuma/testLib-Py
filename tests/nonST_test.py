@@ -43,11 +43,27 @@ import testLib.nonStopTesting as testDeco
 import testLib.dummies.functions as dummyFunc
 import testLib.dummies.classes as dummyClass
 
+def autoprint (function):
+    def wrapper (*args, **kwargs):
+        ans = function(*args, **kwargs)
+        if  ans:
+            try:
+                print (ans.getErrorLog())
+            except:
+                try:
+                    print (ans)
+                except:
+                    print ("Uncontrolled")
+        else:
+            print ("Nothing was returned")
+        return ans
+    return wrapper
+
 testFunction = testDeco.testFunction
 testClass = testDeco.testClass
 
-menuFunction = testFunction(dummyFunc.menu)
-errorFunction = testFunction(dummyFunc.forceError)
+menuFunction = autoprint(testFunction(dummyFunc.menu))
+errorFunction = autoprint(testFunction(dummyFunc.forceError))
 class errorClass:
     def __init__(self, myvar):
         self.myvar = myvar
@@ -78,6 +94,26 @@ errorFunction(1)
 #errorFunction(b) # error outside function scope
 errorFunction(1,2,b=1)
 errorFunction(b=1)
+#expected error
+catchedError = errorFunction()
+catchedError.expectError()
+print(catchedError)
+catchedError.expectError()
+print(catchedError)
+##print (errorFunction().getErrorLog())
+errorFunction()
+catchedError.expectError()
+print(catchedError)
+
+#Force hack
+catchedError1 = errorFunction()
+catchedError2 = errorFunction()
+catchedError1.expectError()
+print(catchedError1, "cannot change")
+catchedError2.expectError()
+catchedError1.expectError()
+print(catchedError1, "hacked")
+print(catchedError2)
 
 
 # Errors are handled in methods    
@@ -107,8 +143,8 @@ dummyClass.MyC(1).getMyvar(1)
     
 """POSTPROCESSING"""
 print ("""
-*********************************************************
-* If you read this sentence the test does work properly *
-*********************************************************
+**********************************************************
+* If you read this sentence, the test does work properly *
+**********************************************************
 """)
 print (TUTORIAL)
